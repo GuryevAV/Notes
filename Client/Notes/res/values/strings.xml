@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+	<string name="app_name">Заметки</string>
+    <string name="hello_world">Hello world!</string>
+	<string name="login">Введите логин</string>
+	<string name="password">Введите пароль</string>
+	<string name="registration">Регистрация</string>
+	<string name="authorization">Авторизация</string>
+	<string name="bad_pass">Неверный пароль</string>
+	<string name="add">Добавить</string>
+	<string name="input_text">Введите текст</string>
+	<string name="save">Сохранить</string>
+	<string name="note_is_empty">Заметка должна содержать текст</string>
+	<string name="data_get">Получаем данные</string>
+	<string name="data_post">Отправляем данные</string>
+	<string name="wrong_pass">Неправильный пароль</string>
+	<string name="wrong_login">Неправильный логин</string>
+	<string name="error_login">Ошибка при создании пользователя</string>
+	<string name="exit">Выход</string>
+	
+	<string name="warning">Предупреждение</string>
+	<string name="yes">Да</string>
+	<string name="no">Нет</string>
+	<string name="agent_cancel_message">Вы действительно хотите удалить эту заметку?</string>
+	
+</resources>
