@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent" >"
+    android:layout_height="match_parent" >
     
 	<TextView 
 	    android:id="@+id/tvNoteText"
@@ -12,12 +12,17 @@
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
 		android:layout_below="@+id/tvNoteText" />
+	<TextView 
+	    android:id="@+id/tvNoteId"
+	    android:visibility="invisible"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content" />
 	<ImageButton 
 	    android:id="@+id/btnDeleteNote"
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
 		android:layout_alignParentRight="true"
 		android:onClick="onClick"
-		android:src="@android:drawable/ic_menu_close_clear_cancel"
-		/>
+		android:src="@android:drawable/ic_menu_close_clear_cancel" />
+	
 </RelativeLayout>

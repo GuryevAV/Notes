@@ -7,7 +7,6 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
 
 import android.app.ProgressDialog;
@@ -19,7 +18,7 @@ class HttpGET extends AsyncTask<String, Void, String> {
 	
 	private ProgressDialog dialog;
 	private final Context mCtx;
-	
+	HttpClient httpclient;
 		
 	public HttpGET(Context ctx) {
 		mCtx = ctx;
@@ -29,10 +28,11 @@ class HttpGET extends AsyncTask<String, Void, String> {
     protected String doInBackground(String... url) {
     	String line = "";
     	try {
-    		HttpClient httpclient = new DefaultHttpClient();
+    		httpclient = MainActivity.httpclient;
     		HttpGet httpget = new HttpGet(url[0]);
-    	    Log.d("1", "запрос отправлен");
+    		Log.d("1", "запрос отправлен");
     	    HttpResponse response = httpclient.execute(httpget);
+    	    //response.getHeaders("Set-Cookie");
     	    HttpEntity httpEntity = response.getEntity();
     	    line = EntityUtils.toString(httpEntity, "UTF-8");
     	    Log.d("1", line);
@@ -47,19 +47,23 @@ class HttpGET extends AsyncTask<String, Void, String> {
 
     @Override
     protected void onPostExecute(String result) {
-            dialog.dismiss();
-            super.onPostExecute(result);
+        super.onPostExecute(result);
+        dialog.dismiss();
     }
 
     @Override
     protected void onPreExecute() {
-            dialog = new ProgressDialog(mCtx);
-            dialog.setMessage(mCtx.getString(R.string.data_get));
-            dialog.setIndeterminate(true);
-            dialog.setCancelable(true);
-            dialog.show();
-            super.onPreExecute();
+    	super.onPreExecute();
+        dialog = new ProgressDialog(mCtx);
+        dialog.setMessage(mCtx.getString(R.string.data_get));
+        dialog.setIndeterminate(true);
+        dialog.setCancelable(true);
+        dialog.show();
     }
     
-    
+    @Override
+    protected void onCancelled() {
+    	dialog.dismiss();
+    	super.onCancelled();
+    }
 }

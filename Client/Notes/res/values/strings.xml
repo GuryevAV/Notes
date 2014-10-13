@@ -17,6 +17,8 @@
 	<string name="wrong_pass">Неправильный пароль</string>
 	<string name="wrong_login">Неправильный логин</string>
 	<string name="error_login">Ошибка при создании пользователя</string>
+	<string name="error_session">Ошибка сессии</string>
+	<string name="error_wait">Превышено время ожидания сервера. Попробуйте позже</string>
 	<string name="exit">Выход</string>
 	
 	<string name="warning">Предупреждение</string>

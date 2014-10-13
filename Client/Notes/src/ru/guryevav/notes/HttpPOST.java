@@ -4,37 +4,37 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
 
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.os.AsyncTask;
 
-class HttpPOST extends AsyncTask<String, Void, Integer> {
+class HttpPOST extends AsyncTask<String, Void, String[]> {
 	
 	private ProgressDialog dialog;
 	private final Context mCtx;
+	HttpClient httpclient;
 			
 	public HttpPOST(Context ctx) {
 		mCtx = ctx;
 	}
 	
     @Override
-    protected Integer doInBackground(String... data) {
-    	
-    	Integer result = 0;
+    protected String[] doInBackground(String... data) {
     	
     	// Create a new HttpClient and Post Header
-	    HttpClient httpclient = new DefaultHttpClient();
 	    HttpPost httppost = new HttpPost(data[0]);
-
+	    HttpResponse response = null;
+	    String[] result = {"", ""};
 	    try {
 	        //Добавляем свои данные
 	    	List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
@@ -50,13 +50,17 @@ class HttpPOST extends AsyncTask<String, Void, Integer> {
 	    	if (!(data[4] == "")) {
 		        nameValuePairs.add(new BasicNameValuePair("hash",  data[4]));
 	    	}
+	    	if (!(data[5] == "")) {
+	    		nameValuePairs.add(new BasicNameValuePair("_id",  data[5]));
+	    	}
 	        httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs,"utf-8"));
 
 	        // Выполняем HTTP Post Request
-	        HttpResponse response = httpclient.execute(httppost);
-	        result = response.getStatusLine().getStatusCode();
-	        //HttpEntity httpEntity = response.getEntity();
-    	    //line = EntityUtils.toString(httpEntity, "UTF-8");
+	        httpclient = MainActivity.httpclient;
+	        response = httpclient.execute(httppost);
+	        result[0] = response.getStatusLine().getStatusCode() + "";
+	        HttpEntity httpEntity = response.getEntity();
+	        result[1] = EntityUtils.toString(httpEntity, "UTF-8");
     	    
 	    } catch (ClientProtocolException e) {
 	        // TODO Auto-generated catch block
@@ -67,7 +71,7 @@ class HttpPOST extends AsyncTask<String, Void, Integer> {
     }
 
     @Override
-    protected void onPostExecute(Integer result) {
+    protected void onPostExecute(String[] result) {
             dialog.dismiss();
             super.onPostExecute(result);
     }
@@ -80,5 +84,10 @@ class HttpPOST extends AsyncTask<String, Void, Integer> {
             dialog.setCancelable(true);
             dialog.show();
             super.onPreExecute();
+    }
+    
+    @Override
+    protected void onCancelled() {
+    	super.onCancelled();
     }
 }

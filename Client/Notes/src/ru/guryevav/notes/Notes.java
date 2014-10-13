@@ -1,17 +1,18 @@
 package ru.guryevav.notes;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
 
 import android.app.ActionBar;
 import android.app.DialogFragment;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
-import android.text.format.DateFormat;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -19,6 +20,7 @@ import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class Notes extends FragmentActivity {
 	
@@ -26,17 +28,19 @@ public class Notes extends FragmentActivity {
 	final String ATTRIBUTE_NAME_TEXT = "text";
 	final String ATTRIBUTE_NAME_DATE = "date";
 	final String ATTRIBUTE_NAME_IMAGE = "image";
+	final String ATTRIBUTE_NAME_ID = "_id";
 	
 	int img = android.R.drawable.ic_menu_close_clear_cancel;//R.drawable.ic_launcher;
 	
 	ListView lvNotes;
 	HttpGET httpGET;
 	HttpPOST httpPOST;
+	HttpResponse response;
 	Intent intent;
 	private static final int ACT_EDIT = 1;
 	String userName;
 	SimpleAdapter sAdapter;
-	ArrayList<String> textArray, dateArray;
+	ArrayList<String> textArray, dateArray, idArray;
 	ArrayList<Map<String, Object>> data;
 	//Handler h;
 	String[] from;
@@ -44,10 +48,12 @@ public class Notes extends FragmentActivity {
 	Map<String, Object> m;
 	RelativeLayout rLayout;
 	TextView tv;
-	String[] dataPOST = {"", "", "", "", ""};
-	Integer httpResult;
+	String[] dataPOST = {"", "", "", "", "", ""};
+	String[] httpResult = {"", ""};
 	DialogFragment dlgDelete;
 	View myV;
+	HttpClient httpclient;
+	ActionBar actionBar;
 	
 	/*Handler.Callback hc = new Handler.Callback() {
         public boolean handleMessage(Message msg) {
@@ -60,17 +66,15 @@ public class Notes extends FragmentActivity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.notes);
-		
 		//h = new Handler(hc);
-					    
+		
 		textArray = new ArrayList<String>();
 		dateArray = new ArrayList<String>();
 		intent = getIntent();
 		userName = intent.getStringExtra("user_name");
 		
-		ActionBar actionBar = getActionBar();
-        actionBar.setTitle(userName);
-		
+		actionBar = getActionBar();
+        		
 		myList();
 	}
 	
@@ -88,7 +92,7 @@ public class Notes extends FragmentActivity {
 		// as you specify a parent activity in AndroidManifest.xml.
 		int id = item.getItemId();
 		if (id == R.id.action_exit) {
-			finish();
+			logout();
 		}
 		return true;
 	}
@@ -109,23 +113,27 @@ public class Notes extends FragmentActivity {
 	
 	public void deleteNote() {
 		rLayout = (RelativeLayout) myV.getParent();
-		tv = (TextView) rLayout.getChildAt(0);
+		tv = (TextView) rLayout.getChildAt(2);
 		dataPOST[0] = Urls.URL + Urls.URL_NOTE_REMOVE;
-		dataPOST[1] = userName; 
-		dataPOST[2] = tv.getText().toString();
+		dataPOST[1] = ""; 
+		dataPOST[2] = "";
 		dataPOST[3] = "";
+		dataPOST[4] = "";
+		dataPOST[5] = tv.getText().toString();
 		httpPOST = new HttpPOST(this);
 		httpPOST.execute(dataPOST);
-		httpResult = 0;
 		try {
 			httpResult = httpPOST.get();
-			if (httpResult == 200) {
+			if (httpResult[0].equals("200")) {
 				for (int i = 0; i < data.size(); i++) {
-					if (data.get(i).get(ATTRIBUTE_NAME_TEXT) == tv.getText().toString()) {
+					if (data.get(i).get(ATTRIBUTE_NAME_ID) == tv.getText().toString()) {
 						data.remove(i);
+						actionBar.setTitle(userName + " " + data.size());
 						sAdapter.notifyDataSetChanged();
 					};
 				}
+			} else {
+				Toast.makeText(this, getString(R.string.error_session), Toast.LENGTH_LONG).show();
 			}
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
@@ -138,7 +146,7 @@ public class Notes extends FragmentActivity {
 	
 	@Override
 	public void onBackPressed() {
-		finish();
+		logout();
 	}
 	
 	@Override
@@ -150,19 +158,24 @@ public class Notes extends FragmentActivity {
 				dataPOST[1] = userName; 
 				dataPOST[2] = intent.getStringExtra("text");
 				dataPOST[3] = "";
+				dataPOST[4] = "";
+				dataPOST[5] = "";
 				httpPOST = new HttpPOST(this);
 				httpPOST.execute(dataPOST);
-				httpResult = 0;
 				try {
 					httpResult = httpPOST.get();
-					if (httpResult == 200) {
-						String currentDateTimeString = (String) DateFormat.format("yyyy-MM-dd kk:mm:ss",new Date());
+					if (httpResult[0].equals("200")) {
+						//String currentDateTimeString = (String) DateFormat.format("yyyy-MM-dd kk:mm:ss",new Date());
+						String idData[] = {"", ""};
+						idData = JSONParsing.JSONOneNote(httpResult[1]);
 						m = new HashMap<String, Object>();
 					      m.put(ATTRIBUTE_NAME_TEXT, dataPOST[2]);
-					      m.put(ATTRIBUTE_NAME_DATE, currentDateTimeString);
+					      m.put(ATTRIBUTE_NAME_DATE, idData[1]);
 					      m.put(ATTRIBUTE_NAME_IMAGE, img);
+					      m.put(ATTRIBUTE_NAME_ID, idData[0]);
 					      data.add(m);
 					      sAdapter.notifyDataSetChanged();
+					      actionBar.setTitle(userName + " " + data.size());
 					}
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
@@ -187,6 +200,7 @@ public class Notes extends FragmentActivity {
 		      httpResult = httpGET.get();
 		      textArray = JSONParsing.JSONNotes(httpResult, "text");
 		      dateArray = JSONParsing.JSONNotes(httpResult, "created");
+		      idArray = JSONParsing.JSONNotes(httpResult, "_id");
 		      
 		    } catch (InterruptedException e) {
 		      e.printStackTrace();
@@ -201,14 +215,15 @@ public class Notes extends FragmentActivity {
 		      m.put(ATTRIBUTE_NAME_TEXT, textArray.get(i));
 		      m.put(ATTRIBUTE_NAME_DATE, dateArray.get(i));
 		      m.put(ATTRIBUTE_NAME_IMAGE, img);
+		      m.put(ATTRIBUTE_NAME_ID, idArray.get(i));
 		      data.add(m);
 		    }
 		    
 		    // массив имен атрибутов, из которых будут читаться данные
 			String[] from = { ATTRIBUTE_NAME_TEXT, ATTRIBUTE_NAME_DATE,
-		        ATTRIBUTE_NAME_IMAGE };
+		        ATTRIBUTE_NAME_IMAGE, ATTRIBUTE_NAME_ID };
 		    // массив ID View-компонентов, в которые будут вставлять данные
-		    int[] to = { R.id.tvNoteText, R.id.tvNoteDate, R.id.btnDeleteNote };
+		    int[] to = { R.id.tvNoteText, R.id.tvNoteDate, R.id.btnDeleteNote, R.id.tvNoteId };
 		    
 		    // создаем адаптер
 		    sAdapter = new SimpleAdapter(this, data, R.layout.item,
@@ -216,6 +231,31 @@ public class Notes extends FragmentActivity {
 		    // определяем список и присваиваем ему адаптер
 		    lvNotes = (ListView) findViewById(R.id.lvNotes);
 		    lvNotes.setAdapter(sAdapter);
+		    
+		    actionBar.setTitle(userName + " " + textArray.size());
+		}
+	}
+	
+	void logout() {
+		dataPOST[0] = Urls.URL + Urls.URL_LOGOUT;
+		dataPOST[1] = ""; 
+		dataPOST[2] = "";
+		dataPOST[3] = "";
+		dataPOST[4] = "";
+		dataPOST[5] = "";
+		httpPOST = new HttpPOST(this);
+		httpPOST.execute(dataPOST);
+		try {
+			httpResult = httpPOST.get();
+			if (httpResult[0].equals("200")) {
+				finish();
+			}
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 }

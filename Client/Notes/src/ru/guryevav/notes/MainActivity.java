@@ -1,14 +1,17 @@
 package ru.guryevav.notes;
 
-import java.net.InetAddress;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import org.apache.http.client.HttpClient;
+import org.apache.http.impl.client.DefaultHttpClient;
 
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -23,15 +26,19 @@ public class MainActivity extends Activity {
 	EditText etLogin, etPassword;
 	HttpPOST httpPOST;
 	HttpGET httpGET;
-	String[] dataPOST = {"", "", "", "", ""};
-		
+	String[] dataPOST = {"", "", "", "", "", ""};
+	static HttpClient httpclient = new DefaultHttpClient();
+	String[] httpResult = {"", ""};
+	String httpResultStr;
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.login);
 		etLogin = (EditText) findViewById(R.id.etLogin); 
-		etPassword = (EditText) findViewById(R.id.etPassword); 
-	}
+		etPassword = (EditText) findViewById(R.id.etPassword);
+		
+    }
 	
 	public void onClick(View v) {
 		if (checkFields()) {
@@ -42,21 +49,20 @@ public class MainActivity extends Activity {
 					httpGET.execute(Urls.URL + Urls.URL_SALT + etLogin.getText().toString());
         		
 					if (!(httpGET == null)) {
-        				String httpResult = "";
-        				httpResult = httpGET.get(5, TimeUnit.SECONDS);
+        				httpResultStr = httpGET.get(5, TimeUnit.SECONDS);
 						
 						if (!(httpResult.equals("Forbidden"))) {
 		        		    dataPOST[0] = Urls.URL + Urls.URL_LOGIN_HASH;
 		          			dataPOST[1] = etLogin.getText().toString(); 
 		          			dataPOST[2] = "";
 		          			dataPOST[3] = "";
-		          			dataPOST[4] = Crypto.getHash(etPassword.getText().toString(), httpResult);
+		          			dataPOST[4] = Crypto.getHash(etPassword.getText().toString(), httpResultStr);
+		          			dataPOST[5] = "";
 		          			  
 		          			httpPOST = new HttpPOST(this);
 		          			httpPOST.execute(dataPOST);
-		          			Integer httpResultInt = 0;
-		          			httpResultInt = httpPOST.get(5, TimeUnit.SECONDS);
-		          				if (httpResultInt == 200) {
+		          			httpResult = httpPOST.get(5, TimeUnit.SECONDS);
+		          				if (httpResult[0].equals("200")) {
 		          					intent = new Intent(this, Notes.class);
 		          					intent.putExtra("user_name", etLogin.getText().toString().trim());
 		          					startActivity(intent);
@@ -75,12 +81,12 @@ public class MainActivity extends Activity {
 	            	dataPOST[2] = "";
 	            	dataPOST[3] = random;
 	            	dataPOST[4] = Crypto.getHash(etPassword.getText().toString(), random);
+	            	dataPOST[5] = "";
 	        			  
 	            	httpPOST = new HttpPOST(this);
 	            	httpPOST.execute(dataPOST);
-	            	Integer httpResultInt = 0;
-	            	httpResultInt = httpPOST.get(5, TimeUnit.SECONDS);
-	            	  	if (httpResultInt == 200) {
+	            	httpResult = httpPOST.get(5, TimeUnit.SECONDS);
+	            	  	if (httpResult[0].equals("200")) {
 	        				intent = new Intent(this, Notes.class);
 	        				intent.putExtra("user_name", etLogin.getText().toString().trim());
 	        				startActivity(intent);
@@ -90,6 +96,8 @@ public class MainActivity extends Activity {
 	            break;
 				}
 			} catch (TimeoutException e) {
+				Log.d("1", "get timeout, result = " + httpResult);
+				cancelTask();
 				e.printStackTrace();
 			} catch (InterruptedException e) {
 				e.printStackTrace();
@@ -98,8 +106,7 @@ public class MainActivity extends Activity {
 		    }
 		}
 	}
-	
-	
+		
 	public boolean checkFields() {
 		boolean result = false;
 		String toastString = "";
@@ -117,5 +124,10 @@ public class MainActivity extends Activity {
 		return result;
 	}
 	
+	private void cancelTask() {
+	    if (httpGET == null) return;
+	    httpGET.cancel(false);
+	    Toast.makeText(this, getString(R.string.error_wait), Toast.LENGTH_LONG).show();
+	}
 }
 

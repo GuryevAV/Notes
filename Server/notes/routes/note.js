@@ -14,7 +14,8 @@ exports.post = function(req, res, next) {
     var note = new Note({username: username, text: text});
     note.save(function(err) {
         if (err) return next(err);
-        res.send(200);
+        res.json(note);
+        //res.send(200);
         // ... 200 OK
     });
 }
