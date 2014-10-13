@@ -1,12 +1,15 @@
+var checkAuth = require('middleware/checkAuth');
+
 module.exports = function(app) {
 
-    app.get('/login', require('./login').get);
-    app.post('/login', require('./login').post);
+    //app.get('/login', require('./login').get);
+    //app.post('/login', require('./login').post);
     app.post('/login_hash', require('./login_hash').post);
+    app.post('/logout', require('./logout').post);
 
-    app.get('/notes/:id', require('./note').get);
-    app.post('/note', require('./note').post);
-    app.post('/note_remove', require('./note_remove').post);
+    app.get('/notes/:id', checkAuth, require('./note').get);
+    app.post('/note', checkAuth, require('./note').post);
+    app.post('/note_remove', checkAuth, require('./note_remove').post);
 
     app.get('/salt/:id', require('./salt').get);
 };
